@@ -11,6 +11,9 @@ import {
   type WbsTreeNode,
 } from './engine';
 import { sampleProjectWireJson } from './sampleProject';
+import RecursosView from './RecursosView';
+
+type ViewTab = 'wbs' | 'recursos';
 
 function formatUSD(n: number): string {
   return n.toLocaleString('es-EC', {
@@ -51,6 +54,7 @@ function WbsTreeRows({
 export default function App() {
   const [project, setProject] = useState<ProjectData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<ViewTab>('wbs');
 
   const result = useMemo<PricingResult | null>(() => {
     if (!project) return null;
@@ -145,7 +149,22 @@ export default function App() {
         </p>
       )}
 
-      {project && result && (
+      {project && (
+        <nav className="tabs">
+          <button type="button" className={tab === 'wbs' ? 'active' : ''} onClick={() => setTab('wbs')}>
+            WBS y Financiero
+          </button>
+          <button type="button" className={tab === 'recursos' ? 'active' : ''} onClick={() => setTab('recursos')}>
+            Recursos
+          </button>
+        </nav>
+      )}
+
+      {project && tab === 'recursos' && (
+        <RecursosView project={project} onChange={setProject} />
+      )}
+
+      {project && result && tab === 'wbs' && (
         <div className="layout">
           <section className="panel">
             <h2>

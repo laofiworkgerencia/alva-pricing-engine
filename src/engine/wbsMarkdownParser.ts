@@ -1,4 +1,5 @@
 import type { LevelType, WbsNode } from './types';
+import { generateId } from './id';
 
 const HEADER_RE = /^([\d.]+)\s*-\s*(.*?)\s*\((.*?)\)/;
 const SECTION_RE = /\*\*(\d)\.\s*[^:]*:\*\*\s*([\s\S]*?)(?=\n\*\*\d\.|\s*$)/g;
@@ -25,10 +26,6 @@ export function extractDuration(text: string | undefined): number {
   const daysMatch = text.match(/(\d+(?:[.,]\d+)?)\s*d[ií]a/i);
   if (daysMatch) return parseFloat(daysMatch[1].replace(',', '.'));
   return 10;
-}
-
-function generateId(): string {
-  return crypto.randomUUID();
 }
 
 /**

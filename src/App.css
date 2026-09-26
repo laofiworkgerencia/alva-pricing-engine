@@ -214,3 +214,237 @@ tr.total td {
   padding-left: 18px;
   font-size: 13px;
 }
+
+/* --- Tabs --- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--border);
+}
+
+.tabs button {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #718096;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.tabs button.active {
+  color: var(--navy);
+  border-bottom-color: var(--orange);
+}
+
+/* --- Recursos: catálogo N1-N5 --- */
+
+.recursos {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hint {
+  color: #a0aec0;
+  font-size: 13px;
+}
+
+.catalog-columns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .catalog-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.col h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #718096;
+  margin: 0 0 8px;
+}
+
+.col-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.col-row,
+.tarifa-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.col-item {
+  flex: 1;
+  text-align: left;
+  background: #f7fafc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-item.active {
+  background: var(--navy);
+  color: white;
+  border-color: var(--navy);
+}
+
+.rename-input {
+  width: 90px;
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #718096;
+}
+
+.danger-btn {
+  background: none;
+  border: none;
+  color: #c53030;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+}
+
+.inline-form {
+  display: flex;
+  gap: 6px;
+}
+
+.inline-form input,
+.inline-form select {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.inline-form button {
+  background: var(--navy);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tarifa-row {
+  flex-wrap: wrap;
+}
+
+.tarifa-row input,
+.tarifa-row select {
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.number-input {
+  width: 70px;
+}
+
+.number-input.small {
+  width: 56px;
+}
+
+.tarifa-form {
+  flex-wrap: wrap;
+}
+
+/* --- Asignaciones --- */
+
+.assignments-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.assignments-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #718096;
+  border-bottom: 2px solid var(--border);
+  padding: 6px 4px;
+}
+
+.assignments-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.assignments-table .cost-cell {
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.assignment-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 700px) {
+  .assignment-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.assignment-form-grid select,
+.assignment-form-grid input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.assignment-form-grid button {
+  background: var(--orange);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #4a5568;
+}
