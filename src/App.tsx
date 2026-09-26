@@ -14,9 +14,10 @@ import { sampleProjectWireJson } from './sampleProject';
 import RecursosView from './RecursosView';
 import ProratedCostsView from './ProratedCostsView';
 import GanttValoradoView from './GanttValoradoView';
+import PropuestaComercialView from './PropuestaComercialView';
 import { formatUSD } from './format';
 
-type ViewTab = 'wbs' | 'recursos' | 'prorated' | 'gantt';
+type ViewTab = 'wbs' | 'recursos' | 'prorated' | 'gantt' | 'propuesta';
 
 function WbsTreeRows({
   nodes,
@@ -158,6 +159,9 @@ export default function App() {
           <button type="button" className={tab === 'gantt' ? 'active' : ''} onClick={() => setTab('gantt')}>
             Gantt Valorado
           </button>
+          <button type="button" className={tab === 'propuesta' ? 'active' : ''} onClick={() => setTab('propuesta')}>
+            Propuesta Comercial
+          </button>
         </nav>
       )}
 
@@ -171,6 +175,10 @@ export default function App() {
 
       {project && result && tab === 'gantt' && (
         <GanttValoradoView project={project} result={result} />
+      )}
+
+      {project && result && tab === 'propuesta' && (
+        <PropuestaComercialView project={project} result={result} onChange={setProject} />
       )}
 
       {project && result && tab === 'wbs' && (

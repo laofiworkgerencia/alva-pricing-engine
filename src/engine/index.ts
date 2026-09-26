@@ -7,3 +7,4 @@ export * from './wbsMarkdownParser';
 export * from './projectIO';
 export * from './catalogOps';
 export * from './valorizedSchedule';
+export * from './ofertaOps';

@@ -54,12 +54,19 @@ completas de la UI original.
     distribuido uniformemente entre sus días de ejecución y agrupado por
     período, con fila de Total y de Acumulado — horizonte por defecto de
     210 días (7 meses), documentado en `SKILL.md`.
-- **45 tests** cubriendo los dos ejemplos numéricos documentados en
+  - **Propuesta Comercial** (`src/PropuestaComercialView.tsx` +
+    `engine/ofertaOps.ts`): datos del cliente/proyecto, parámetros
+    financieros (Seguros/Imprevistos/Utilidad/Descuento) con el resumen
+    recalculándose en vivo, semáforo de presupuesto (verde/amarillo/rojo
+    comparando el PVP contra `targetBudget`), y gestión de hitos de
+    facturación (agregar/editar/eliminar, vinculados a un nodo WBS, con
+    aviso si los porcentajes no suman 100%).
+- **49 tests** cubriendo los dos ejemplos numéricos documentados en
   `SKILL.md` (Especialista SIG → $3,750; Relevador → $64,800), un caso
   completo de prorrateo mixto (por costo directo y por duración) con su
   traza de auditoría, la distribución temporal del cronograma valorado,
-  el round-trip de import/export, el parser de Markdown, y el borrado en
-  cascada del catálogo.
+  el round-trip de import/export, el parser de Markdown, el borrado en
+  cascada del catálogo, y la edición de la oferta comercial/hitos.
 
 ## Diferencias deliberadas frente al original
 
@@ -89,6 +96,8 @@ conversación que dio origen a este repo):
 - El resto de las pestañas de la UI original (Propuesta narrativa,
   Propuesta clásica/Word, Asistente ALVA, Copiloto IA) — se construyen
   incrementalmente sobre este mismo motor.
+- Generación de documento/Word de la propuesta — esta pantalla solo
+  gestiona los datos de la oferta comercial, no exporta un `.docx`.
 - Autenticación/persistencia multi-usuario (Supabase) — esta versión es
   local, sin backend.
 - `isLocked` (bloqueo de asignaciones ante reestructuración top-down de
@@ -99,7 +108,7 @@ conversación que dio origen a este repo):
 
 ```bash
 npm install
-npm test        # vitest run — 45 tests
+npm test        # vitest run — 49 tests
 npm run build   # tsc -b && vite build
 npm run dev     # servidor de desarrollo
 ```

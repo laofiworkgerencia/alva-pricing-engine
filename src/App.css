@@ -663,3 +663,158 @@ tr.total td {
   color: #718096;
   font-style: italic;
 }
+
+/* --- Propuesta Comercial --- */
+
+.propuesta {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 800px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.form-grid label.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  font-size: 13px;
+  font-weight: 400;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #1a202c;
+  font-family: inherit;
+}
+
+.summary-preview {
+  width: 100%;
+  max-width: 360px;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 10px 0;
+}
+
+.summary-preview td {
+  padding: 5px 4px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.summary-preview td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-preview tr.total td {
+  font-weight: 800;
+  color: var(--navy);
+  border-top: 2px solid var(--border);
+}
+
+.semaforo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.semaforo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.semaforo-green {
+  background: #d1fae5;
+  color: #065f46;
+}
+.semaforo-green .semaforo-dot {
+  background: #10b981;
+}
+
+.semaforo-yellow {
+  background: #fef3c7;
+  color: #92400e;
+}
+.semaforo-yellow .semaforo-dot {
+  background: #f59e0b;
+}
+
+.semaforo-red {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.semaforo-red .semaforo-dot {
+  background: #ef4444;
+}
+
+.milestones-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.milestones-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #718096;
+  border-bottom: 2px solid var(--border);
+  padding: 6px 4px;
+}
+
+.milestones-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.milestones-table input,
+.milestones-table select {
+  width: 100%;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.warn-text {
+  color: #c53030;
+}
+
+.add-milestone-btn {
+  background: var(--orange);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
