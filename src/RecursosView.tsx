@@ -37,6 +37,48 @@ function flattenWbs(nodes: WbsTreeNode[], depth = 0): Array<{ id: string; code: 
   ]);
 }
 
+/**
+ * Input numérico para editar un valor ya existente. Mantiene un borrador de
+ * texto local para no perder lo que el usuario está escribiendo (ej. el "."
+ * de "100.5") cada vez que `Number(...)` se recalcula en cada tecla.
+ */
+function NumberField({
+  value,
+  onCommit,
+  className,
+}: {
+  value: number;
+  onCommit: (n: number) => void;
+  className?: string;
+}) {
+  const [prevValue, setPrevValue] = useState(value);
+  const [draft, setDraft] = useState(String(value));
+
+  // Ajuste de estado durante el render (patrón recomendado por React en vez
+  // de un useEffect) cuando `value` cambia por una razón externa al propio
+  // campo (ej. se cargó otro proyecto), sin pisar lo que el usuario escribe.
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setDraft(String(value));
+  }
+
+  return (
+    <input
+      type="number"
+      className={className}
+      value={draft}
+      onChange={(e) => {
+        const text = e.target.value;
+        setDraft(text);
+        const n = Number(text);
+        if (text.trim() !== '' && !Number.isNaN(n)) {
+          onCommit(n);
+        }
+      }}
+    />
+  );
+}
+
 export default function RecursosView({
   project,
   onChange,
@@ -163,8 +205,12 @@ export default function RecursosView({
                         className="danger-btn"
                         title="Eliminar (borra en cascada N4/N5/asignaciones)"
                         onClick={() => {
+                          const orphanedN4Ids = Object.values(project.rubrosDetallados)
+                            .filter((d) => d.parentId === rs.id)
+                            .map((d) => d.id);
                           onChange(removeRubroSecundario(project, rs.id));
                           if (selectedN3 === rs.id) setSelectedN3(null);
+                          if (selectedN4 && orphanedN4Ids.includes(selectedN4)) setSelectedN4(null);
                         }}
                       >
                         ✕
@@ -261,11 +307,10 @@ export default function RecursosView({
                         value={t.supplier}
                         onChange={(e) => onChange(updateTarifa(project, t.id, { supplier: e.target.value }))}
                       />
-                      <input
-                        type="number"
+                      <NumberField
                         className="number-input"
                         value={t.unitCost}
-                        onChange={(e) => onChange(updateTarifa(project, t.id, { unitCost: Number(e.target.value) }))}
+                        onCommit={(n) => onChange(updateTarifa(project, t.id, { unitCost: n }))}
                       />
                       <select
                         value={t.unit}
@@ -343,23 +388,17 @@ export default function RecursosView({
                 <td>{n4?.name ?? '(recurso eliminado)'}</td>
                 <td>{tarifa?.supplier ?? '—'}</td>
                 <td>
-                  <input
-                    type="number"
+                  <NumberField
                     className="number-input small"
                     value={assignment.quantity}
-                    onChange={(e) =>
-                      onChange(updateAssignment(project, assignment.id, { quantity: Number(e.target.value) }))
-                    }
+                    onCommit={(n) => onChange(updateAssignment(project, assignment.id, { quantity: n }))}
                   />
                 </td>
                 <td>
-                  <input
-                    type="number"
+                  <NumberField
                     className="number-input small"
                     value={assignment.time}
-                    onChange={(e) =>
-                      onChange(updateAssignment(project, assignment.id, { time: Number(e.target.value) }))
-                    }
+                    onCommit={(n) => onChange(updateAssignment(project, assignment.id, { time: n }))}
                   />{' '}
                   {assignment.timeUnit}
                 </td>
