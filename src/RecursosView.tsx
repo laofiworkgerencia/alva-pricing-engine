@@ -19,16 +19,13 @@ import {
   type TimeUnit,
   type WbsTreeNode,
 } from './engine';
+import { formatUSD } from './format';
 
 const TARIFA_UNITS: TarifaUnit[] = [
   'Hora', 'Día', 'Semana', 'Mes', 'Global', 'Kit', 'Punto', 'Evento', 'Lote',
   'Millar', 'Lámina', 'Unidad', 'Equipo', 'Vehículo', 'Oficina', '% Remuneración',
 ];
 const TIME_UNITS: TimeUnit[] = ['Hora', 'Día', 'Semana', 'Mes', '-'];
-
-function formatUSD(n: number): string {
-  return n.toLocaleString('es-EC', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
-}
 
 function flattenWbs(nodes: WbsTreeNode[], depth = 0): Array<{ id: string; code: string; name: string; depth: number }> {
   return nodes.flatMap((n) => [

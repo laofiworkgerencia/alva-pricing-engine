@@ -12,16 +12,10 @@ import {
 } from './engine';
 import { sampleProjectWireJson } from './sampleProject';
 import RecursosView from './RecursosView';
+import ProratedCostsView from './ProratedCostsView';
+import { formatUSD } from './format';
 
-type ViewTab = 'wbs' | 'recursos';
-
-function formatUSD(n: number): string {
-  return n.toLocaleString('es-EC', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  });
-}
+type ViewTab = 'wbs' | 'recursos' | 'prorated';
 
 function WbsTreeRows({
   nodes,
@@ -157,11 +151,18 @@ export default function App() {
           <button type="button" className={tab === 'recursos' ? 'active' : ''} onClick={() => setTab('recursos')}>
             Recursos
           </button>
+          <button type="button" className={tab === 'prorated' ? 'active' : ''} onClick={() => setTab('prorated')}>
+            Costos Prorrateados
+          </button>
         </nav>
       )}
 
       {project && tab === 'recursos' && (
         <RecursosView project={project} onChange={setProject} />
+      )}
+
+      {project && result && tab === 'prorated' && (
+        <ProratedCostsView project={project} result={result} />
       )}
 
       {project && result && tab === 'wbs' && (

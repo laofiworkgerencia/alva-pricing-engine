@@ -188,6 +188,46 @@ describe('calculate (motor completo)', () => {
     expect(result.scheduleByNode.f1).toEqual({ startDay: 1, duration: 40 });
 
     expect(result.warnings).toHaveLength(0);
+
+    // Auditoría de contribuciones: cada asignación debe quedar trazada.
+    const direct = result.contributions.filter((c) => c.kind === 'direct');
+    expect(direct).toEqual([
+      { assignmentId: 'a1', tarifaId: 'tar-sig', sourceNodeId: 't1', leafId: 't1', amount: 3750, kind: 'direct' },
+      { assignmentId: 'a2', tarifaId: 'tar-dig', sourceNodeId: 't2', leafId: 't2', amount: 800, kind: 'direct' },
+    ]);
+
+    const bySourceA3 = result.contributions.filter((c) => c.assignmentId === 'a3');
+    expect(bySourceA3).toHaveLength(2);
+    bySourceA3.forEach((c) => expect(c.basis).toBe('directCost'));
+    expect(bySourceA3.find((c) => c.leafId === 't1')?.amount).toBeCloseTo((2000 * 3750) / 4550, 5);
+    expect(bySourceA3.find((c) => c.leafId === 't2')?.amount).toBeCloseTo((2000 * 800) / 4550, 5);
+
+    const bySourceA4 = result.contributions.filter((c) => c.assignmentId === 'a4');
+    bySourceA4.forEach((c) => expect(c.basis).toBe('duration'));
+    expect(bySourceA4.find((c) => c.leafId === 't1')?.amount).toBeCloseTo(400 * (10 / 40), 5);
+    expect(bySourceA4.find((c) => c.leafId === 't2')?.amount).toBeCloseTo(400 * (30 / 40), 5);
+
+    // La suma de contribuciones por hoja debe reconstruir exactamente costByNode.total.
+    const sumForLeaf = (leafId: string) =>
+      result.contributions.filter((c) => c.leafId === leafId).reduce((acc, c) => acc + c.amount, 0);
+    expect(sumForLeaf('t1')).toBeCloseTo(result.costByNode.t1.total, 5);
+    expect(sumForLeaf('t2')).toBeCloseTo(result.costByNode.t2.total, 5);
+  });
+
+  it('marca basis "equal" cuando ninguna hoja tiene costo directo para prorratear', () => {
+    const { catalog, wbsNodes, assignments, oferta } = buildFixture();
+    // Sin asignaciones directas, a3 (indirecto, prorrateo por costo) debe caer en reparto igualitario.
+    delete assignments.a1;
+    delete assignments.a2;
+    delete assignments.a4;
+
+    const result = calculate(wbsNodes, assignments, catalog, oferta);
+    const shared = result.contributions.filter((c) => c.assignmentId === 'a3');
+    expect(shared).toHaveLength(2);
+    shared.forEach((c) => {
+      expect(c.basis).toBe('equal');
+      expect(c.amount).toBeCloseTo(1000, 5); // 2000 / 2 hojas
+    });
   });
 
   it('reporta un warning si una asignación referencia un id inexistente', () => {

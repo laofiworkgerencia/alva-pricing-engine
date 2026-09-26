@@ -448,3 +448,70 @@ tr.total td {
   font-size: 13px;
   color: #4a5568;
 }
+
+/* --- Costos Prorrateados --- */
+
+.prorated {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.prorated-table,
+.contrib-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.prorated-table th,
+.contrib-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #718096;
+  border-bottom: 2px solid var(--border);
+  padding: 6px 4px;
+}
+
+.prorated-table td,
+.contrib-table td {
+  padding: 8px 4px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.prorated-table tbody tr {
+  cursor: pointer;
+}
+
+.prorated-table tbody tr:hover {
+  background: #f7fafc;
+}
+
+.prorated-table tbody tr.selected {
+  background: #ebf5ff;
+}
+
+.prorated-table .total-cell,
+.contrib-table .cost-cell {
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.badge-direct {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-shared {
+  background: #fef3c7;
+  color: #92400e;
+}

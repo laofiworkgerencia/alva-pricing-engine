@@ -21,11 +21,27 @@ export interface NodeCost {
   total: number;
 }
 
+/** Traza de auditoría: cuánto aportó una asignación puntual al costo de una hoja. */
+export interface CostContribution {
+  assignmentId: string;
+  tarifaId: string;
+  /** Nodo WBS al que fue asignado originalmente el recurso (puede ser un nodo padre). */
+  sourceNodeId: string;
+  /** Hoja que recibe el costo (igual a sourceNodeId cuando es directo). */
+  leafId: string;
+  amount: number;
+  kind: 'direct' | 'shared';
+  /** Solo para 'shared': el criterio de reparto usado. */
+  basis?: 'duration' | 'directCost' | 'equal';
+}
+
 export interface PricingResult {
   /** Costo por nodo WBS, indexado por id. Incluye nodos padre e hijos. */
   costByNode: Record<string, NodeCost>;
   /** startDay/duration recalculados para nodos padre (rollup de sus hojas activas). */
   scheduleByNode: Record<string, { startDay: number; duration: number }>;
+  /** Auditoría del prorrateo: qué asignación aportó cuánto a cada hoja, y cómo. */
+  contributions: CostContribution[];
   summary: FinancialSummary;
   milestoneAmounts: Array<Milestone & { amount: number }>;
   warnings: string[];
@@ -185,6 +201,7 @@ export function calculate(
 
   // Pasada 1: costo bruto de cada asignación + acumulación directa en hojas.
   const sharedAssignments: Array<{ assignment: ResourceAssignment; cost: number }> = [];
+  const contributions: CostContribution[] = [];
 
   Object.values(assignments).forEach((assignment) => {
     const targetNode = nodeById.get(assignment.elementoWbsId);
@@ -204,6 +221,14 @@ export function calculate(
 
     if (isDirect && isLeaf(targetNode.id)) {
       costByNode[targetNode.id].direct += cost;
+      contributions.push({
+        assignmentId: assignment.id,
+        tarifaId: assignment.tarifaId,
+        sourceNodeId: targetNode.id,
+        leafId: targetNode.id,
+        amount: cost,
+        kind: 'direct',
+      });
     } else {
       // Recursos bajo COSTOS INDIRECTOS/GASTOS GENERALES, o asignados a un nodo padre,
       // se prorratean entre las hojas activas descendientes.
@@ -248,12 +273,31 @@ export function calculate(
       const equalShare = cost / leaves.length;
       leaves.forEach((leaf) => {
         costByNode[leaf.id].shared += equalShare;
+        contributions.push({
+          assignmentId: assignment.id,
+          tarifaId: assignment.tarifaId,
+          sourceNodeId: assignment.elementoWbsId,
+          leafId: leaf.id,
+          amount: equalShare,
+          kind: 'shared',
+          basis: 'equal',
+        });
       });
       return;
     }
 
     leaves.forEach((leaf, i) => {
-      costByNode[leaf.id].shared += cost * (weights[i] / totalWeight);
+      const amount = cost * (weights[i] / totalWeight);
+      costByNode[leaf.id].shared += amount;
+      contributions.push({
+        assignmentId: assignment.id,
+        tarifaId: assignment.tarifaId,
+        sourceNodeId: assignment.elementoWbsId,
+        leafId: leaf.id,
+        amount,
+        kind: 'shared',
+        basis: byDuration ? 'duration' : 'directCost',
+      });
     });
   });
 
@@ -278,7 +322,7 @@ export function calculate(
   const summary = calculateFinancialSummary(costBase, oferta);
   const milestoneAmounts = calculateMilestones(oferta.milestones, summary.total, warnings);
 
-  return { costByNode, scheduleByNode, summary, milestoneAmounts, warnings };
+  return { costByNode, scheduleByNode, contributions, summary, milestoneAmounts, warnings };
 }
 
 export function calculateFinancialSummary(
