@@ -6,3 +6,4 @@ export * from './autoQuoterEngine';
 export * from './wbsMarkdownParser';
 export * from './projectIO';
 export * from './catalogOps';
+export * from './valorizedSchedule';

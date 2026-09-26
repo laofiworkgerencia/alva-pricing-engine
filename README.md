@@ -47,11 +47,19 @@ completas de la UI original.
     detalle de qué asignación aportó cada monto, desde qué nodo se
     prorrateó, y con qué criterio (duración, costo directo o partes
     iguales) — la auditoría que el original no exponía.
-- **40 tests** cubriendo los dos ejemplos numéricos documentados en
+  - **Gantt Valorado** (`src/GanttValoradoView.tsx` + `engine/valorizedSchedule.ts`):
+    barras de Gantt por nodo WBS según `startDay`/`duration` (con zoom
+    Día/Semana/Mes, reutilizando la misma tabla de conversión temporal del
+    motor), y debajo un Cronograma Valorado: el costo de cada nodo
+    distribuido uniformemente entre sus días de ejecución y agrupado por
+    período, con fila de Total y de Acumulado — horizonte por defecto de
+    210 días (7 meses), documentado en `SKILL.md`.
+- **45 tests** cubriendo los dos ejemplos numéricos documentados en
   `SKILL.md` (Especialista SIG → $3,750; Relevador → $64,800), un caso
   completo de prorrateo mixto (por costo directo y por duración) con su
-  traza de auditoría, el round-trip de import/export, el parser de
-  Markdown, y el borrado en cascada del catálogo.
+  traza de auditoría, la distribución temporal del cronograma valorado,
+  el round-trip de import/export, el parser de Markdown, y el borrado en
+  cascada del catálogo.
 
 ## Diferencias deliberadas frente al original
 
@@ -78,9 +86,9 @@ conversación que dio origen a este repo):
 
 ## Qué falta a propósito (no es una regresión, es alcance de esta primera entrega)
 
-- El resto de las pestañas de la UI original (Gantt valorado, Propuesta
-  narrativa, Propuesta clásica/Word, Asistente ALVA, Copiloto IA) — se
-  construyen incrementalmente sobre este mismo motor.
+- El resto de las pestañas de la UI original (Propuesta narrativa,
+  Propuesta clásica/Word, Asistente ALVA, Copiloto IA) — se construyen
+  incrementalmente sobre este mismo motor.
 - Autenticación/persistencia multi-usuario (Supabase) — esta versión es
   local, sin backend.
 - `isLocked` (bloqueo de asignaciones ante reestructuración top-down de
@@ -91,7 +99,7 @@ conversación que dio origen a este repo):
 
 ```bash
 npm install
-npm test        # vitest run — 40 tests
+npm test        # vitest run — 45 tests
 npm run build   # tsc -b && vite build
 npm run dev     # servidor de desarrollo
 ```

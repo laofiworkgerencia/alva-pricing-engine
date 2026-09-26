@@ -13,9 +13,10 @@ import {
 import { sampleProjectWireJson } from './sampleProject';
 import RecursosView from './RecursosView';
 import ProratedCostsView from './ProratedCostsView';
+import GanttValoradoView from './GanttValoradoView';
 import { formatUSD } from './format';
 
-type ViewTab = 'wbs' | 'recursos' | 'prorated';
+type ViewTab = 'wbs' | 'recursos' | 'prorated' | 'gantt';
 
 function WbsTreeRows({
   nodes,
@@ -154,6 +155,9 @@ export default function App() {
           <button type="button" className={tab === 'prorated' ? 'active' : ''} onClick={() => setTab('prorated')}>
             Costos Prorrateados
           </button>
+          <button type="button" className={tab === 'gantt' ? 'active' : ''} onClick={() => setTab('gantt')}>
+            Gantt Valorado
+          </button>
         </nav>
       )}
 
@@ -163,6 +167,10 @@ export default function App() {
 
       {project && result && tab === 'prorated' && (
         <ProratedCostsView project={project} result={result} />
+      )}
+
+      {project && result && tab === 'gantt' && (
+        <GanttValoradoView project={project} result={result} />
       )}
 
       {project && result && tab === 'wbs' && (
