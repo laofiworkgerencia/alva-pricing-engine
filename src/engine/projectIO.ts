@@ -63,6 +63,7 @@ function fromWire(data: WireProjectData): ProjectData {
         linkedWbsId: m.linkedWbsId || undefined,
       })),
     },
+    narrativa: (data.narrativa ?? {}) as ProjectData['narrativa'],
   };
 }
 
@@ -120,6 +121,7 @@ function toWire(data: ProjectData): WireProjectData {
         linkedWbsId: m.linkedWbsId ?? '',
       })),
     },
+    narrativa: data.narrativa as WireProjectData['narrativa'],
   };
 }
 

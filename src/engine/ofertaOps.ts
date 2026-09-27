@@ -1,5 +1,5 @@
 import { generateId } from './id';
-import type { Milestone, OfertaComercial, ProjectData } from './types';
+import type { Milestone, NarrativeSectionId, OfertaComercial, ProjectData } from './types';
 
 export function updateOfertaComercial(
   project: ProjectData,
@@ -35,6 +35,17 @@ export function updateMilestone(
         m.id === id ? { ...m, ...patch } : m
       ),
     },
+  };
+}
+
+export function updateNarrativeSection(
+  project: ProjectData,
+  sectionId: NarrativeSectionId,
+  texto: string
+): ProjectData {
+  return {
+    ...project,
+    narrativa: { ...project.narrativa, [sectionId]: { texto } },
   };
 }
 

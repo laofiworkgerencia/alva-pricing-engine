@@ -97,6 +97,10 @@ export const wireOfertaComercialSchema = z.object({
   milestones: z.array(wireMilestoneSchema),
 });
 
+export const wireNarrativeSectionSchema = z.object({
+  texto: z.string(),
+});
+
 export const wireProjectDataSchema = z.object({
   version: z.string(),
   categorias: z.record(z.string(), wireCategoriaSchema),
@@ -107,6 +111,8 @@ export const wireProjectDataSchema = z.object({
   elementos_wbs: z.record(z.string(), wireWbsNodeSchema),
   recursos_wbs: z.record(z.string(), wireResourceAssignmentSchema),
   oferta_comercial: wireOfertaComercialSchema,
+  /** Opcional: la app original no lo exportaba, así que los proyectos viejos no lo traen. */
+  narrativa: z.record(z.string(), wireNarrativeSectionSchema).optional(),
 });
 
 /** El importador original solo exige `empresa === 'LaOfi S.A.S.'` y que `data.elementos_wbs` exista. */

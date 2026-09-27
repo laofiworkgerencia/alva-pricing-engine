@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Secretos locales (GEMINI_API_KEY va como env var en Vercel, nunca aquí)
+.env
+.env.local
+.env.*.local
+!.env.example
+.vercel
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

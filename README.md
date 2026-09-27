@@ -61,12 +61,21 @@ completas de la UI original.
     comparando el PVP contra `targetBudget`), y gestión de hitos de
     facturación (agregar/editar/eliminar, vinculados a un nodo WBS, con
     aviso si los porcentajes no suman 100%).
-- **49 tests** cubriendo los dos ejemplos numéricos documentados en
+  - **Propuesta Narrativa** (`src/PropuestaNarrativaView.tsx` +
+    `engine/narrativePrompt.ts` + `api/generate-narrative.ts`): redacción
+    asistida por IA de las 2 secciones narrativas (Alerta Normativa, La
+    Solución). El texto ahora se guarda **dentro** del proyecto (`narrativa`
+    en el JSON exportado) — en el original vivía en `dbState.propuesta`,
+    fuera del archivo portable, y se perdía al exportar/importar. Ver
+    "Despliegue" abajo para cómo funciona la IA sin exponer ninguna key.
+- **60 tests** cubriendo los dos ejemplos numéricos documentados en
   `SKILL.md` (Especialista SIG → $3,750; Relevador → $64,800), un caso
   completo de prorrateo mixto (por costo directo y por duración) con su
   traza de auditoría, la distribución temporal del cronograma valorado,
-  el round-trip de import/export, el parser de Markdown, el borrado en
-  cascada del catálogo, y la edición de la oferta comercial/hitos.
+  el round-trip de import/export (incluyendo `narrativa`), el parser de
+  Markdown, el borrado en cascada del catálogo, la edición de la oferta
+  comercial/hitos, y el endpoint `/api/generate-narrative` (mockeando la
+  llamada a Gemini).
 
 ## Diferencias deliberadas frente al original
 
@@ -75,9 +84,10 @@ conversación que dio origen a este repo):
 
 1. **Sin secretos en el cliente.** El original horneaba una API key de
    Gemini (`VITE_GEMINI_API_KEY`) en el bundle de producción, extraíble por
-   cualquier usuario. Esta versión no incluye llamadas a LLMs; si se agregan,
-   la key debe ser provista por cada usuario (como ya hacía el `CopilotTab`
-   original), nunca compilada en el build.
+   cualquier usuario. Aquí la generación de texto pasa por un endpoint
+   propio (`api/generate-narrative.ts`, función serverless de Vercel) que
+   guarda la key como variable de entorno del servidor — el navegador
+   nunca la ve, solo llama a `/api/generate-narrative`.
 2. **Motor modular y testeado**, en vez de un solo archivo de 5,600+ líneas
    mezclando cálculo financiero, estado de UI y las 8 pestañas.
 3. **Coincidencia de keywords por límite de palabra** en `AutoQuoterEngine`
@@ -93,11 +103,16 @@ conversación que dio origen a este repo):
 
 ## Qué falta a propósito (no es una regresión, es alcance de esta primera entrega)
 
-- El resto de las pestañas de la UI original (Propuesta narrativa,
-  Propuesta clásica/Word, Asistente ALVA, Copiloto IA) — se construyen
-  incrementalmente sobre este mismo motor.
+- El resto de las pestañas de la UI original (Propuesta clásica/Word,
+  Asistente ALVA, Copiloto IA) — se construyen incrementalmente sobre
+  este mismo motor. El Asistente/Copiloto (chat multi-turno) reutilizará
+  el mismo patrón de `api/generate-narrative.ts`.
 - Generación de documento/Word de la propuesta — esta pantalla solo
   gestiona los datos de la oferta comercial, no exporta un `.docx`.
+- Editor de "Contexto Territorial" — el prompt de la IA acepta datos
+  territoriales (`areaTotalKm2`, `edificacionesTotal`) pero esta versión
+  no tiene todavía la pantalla para capturarlos; por ahora solo usa
+  cliente/nombre del proyecto.
 - Autenticación/persistencia multi-usuario (Supabase) — esta versión es
   local, sin backend.
 - `isLocked` (bloqueo de asignaciones ante reestructuración top-down de
@@ -108,7 +123,33 @@ conversación que dio origen a este repo):
 
 ```bash
 npm install
-npm test        # vitest run — 49 tests
+npm test        # vitest run — 60 tests
 npm run build   # tsc -b && vite build
-npm run dev     # servidor de desarrollo
+npm run dev     # servidor de desarrollo (sin /api — ver nota abajo)
 ```
+
+> `npm run dev` solo levanta el frontend con Vite; `/api/generate-narrative`
+> no existe en ese servidor. Sin él, el botón "✨ Generar con IA" falla y
+> muestra automáticamente el prompt para copiar/pegar manualmente (mismo
+> comportamiento de respaldo que tenía el original sin API key). Para
+> probar el endpoint real en local hace falta la CLI de Vercel (`vercel dev`).
+
+## Despliegue (Vercel + backend de IA)
+
+El frontend y el endpoint de IA se despliegan juntos como un solo proyecto
+de Vercel (Vercel detecta `api/*.ts` como funciones serverless
+automáticamente, sin configuración extra). Pasos, una sola vez:
+
+1. Entra a [vercel.com](https://vercel.com), inicia sesión con tu cuenta de
+   GitHub y click **Add New… → Project**.
+2. Importa el repositorio `laofiworkgerencia/alva-pricing-engine`.
+3. En **Environment Variables**, agrega:
+   - `GEMINI_API_KEY` = tu API key real de Gemini (consíguela en
+     [aistudio.google.com/apikey](https://aistudio.google.com/apikey)).
+     Este valor se queda en el dashboard de Vercel — nunca lo pegues en el
+     código ni me lo compartas a mí.
+4. Click **Deploy**. Vercel construye con `npm run build` (detectado
+   automáticamente por ser un proyecto Vite) y publica `/api/generate-narrative`
+   como función serverless en el mismo dominio.
+5. Listo — la pestaña "Propuesta Narrativa" del sitio desplegado ya genera
+   texto con IA. Cualquier redeploy futuro (push a `main`) es automático.

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { addMilestone, removeMilestone, updateMilestone, updateOfertaComercial } from './ofertaOps';
+import {
+  addMilestone,
+  removeMilestone,
+  updateMilestone,
+  updateNarrativeSection,
+  updateOfertaComercial,
+} from './ofertaOps';
 import type { ProjectData } from './types';
 
 function emptyProject(): ProjectData {
@@ -18,6 +24,7 @@ function emptyProject(): ProjectData {
       quoteSequence: '', targetBudget: 0, globalInsurance: 0, globalContingency: 0, globalProfit: 35,
       milestones: [],
     },
+    narrativa: {},
   };
 }
 
@@ -62,5 +69,20 @@ describe('hitos de facturación', () => {
     const next = removeMilestone(project, targetId);
     expect(next.ofertaComercial.milestones).toHaveLength(1);
     expect(next.ofertaComercial.milestones[0].name).toBe('Final');
+  });
+});
+
+describe('updateNarrativeSection', () => {
+  it('agrega o reemplaza el texto de una sección sin afectar las demás', () => {
+    let project = emptyProject();
+    project = updateNarrativeSection(project, 'alerta_normativa', 'Primer borrador.');
+    project = updateNarrativeSection(project, 'solucion', 'Metodología propuesta.');
+
+    expect(project.narrativa.alerta_normativa?.texto).toBe('Primer borrador.');
+    expect(project.narrativa.solucion?.texto).toBe('Metodología propuesta.');
+
+    project = updateNarrativeSection(project, 'alerta_normativa', 'Versión editada.');
+    expect(project.narrativa.alerta_normativa?.texto).toBe('Versión editada.');
+    expect(project.narrativa.solucion?.texto).toBe('Metodología propuesta.');
   });
 });

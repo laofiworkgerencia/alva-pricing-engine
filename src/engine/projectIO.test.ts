@@ -76,6 +76,9 @@ function buildMinimalProject(): ProjectData {
         { id: 'm2', name: 'Final', percentage: 70 },
       ],
     },
+    narrativa: {
+      alerta_normativa: { texto: 'Marco legal que obliga al cliente a contratar esto.' },
+    },
   };
 }
 
@@ -93,6 +96,14 @@ describe('serializeProjectFileToWireJson / parseProjectFile', () => {
     expect(wireJson.data.elementos_wbs['wbs-1'].parent_id).toBeNull();
     expect(wireJson.data.recursos_wbs['res-1'].elemento_wbs_id).toBe('wbs-1');
     expect(wireJson.data.recursos_wbs['res-1'].tarifa_id).toBe('tar-1');
+    expect(wireJson.data.narrativa.alerta_normativa.texto).toContain('Marco legal');
+  });
+
+  it('importa un archivo sin campo narrativa (proyectos exportados por la app original)', () => {
+    const wireJson = JSON.parse(serializeProjectFileToWireJson(buildMinimalProject()));
+    delete wireJson.data.narrativa;
+    const parsed = parseProjectFile(wireJson);
+    expect(parsed.narrativa).toEqual({});
   });
 
   it('rechaza un archivo sin empresa === "LaOfi S.A.S."', () => {

@@ -33,6 +33,7 @@ function emptyProject(): ProjectData {
       quoteSequence: '', targetBudget: 0, globalInsurance: 0, globalContingency: 0, globalProfit: 35,
       milestones: [],
     },
+    narrativa: {},
   };
 }
 

@@ -150,6 +150,13 @@ export interface OfertaComercial {
   milestones: Milestone[];
 }
 
+/** IDs de las secciones narrativas de la propuesta (SKILL.md / NarrativeEditor original). */
+export type NarrativeSectionId = 'alerta_normativa' | 'solucion';
+
+export interface NarrativeSection {
+  texto: string;
+}
+
 export interface ProjectData {
   version: string;
   categorias: Record<string, Categoria>;
@@ -160,6 +167,12 @@ export interface ProjectData {
   elementosWbs: Record<string, WbsNode>;
   recursosWbs: Record<string, ResourceAssignment>;
   ofertaComercial: OfertaComercial;
+  /**
+   * Texto narrativo de la propuesta, por sección. En la app original vivía
+   * fuera del JSON portable (`dbState.propuesta`, nunca exportado); aquí se
+   * incluye para que viaje junto con el proyecto al exportar/importar.
+   */
+  narrativa: Partial<Record<NarrativeSectionId, NarrativeSection>>;
 }
 
 /** Envoltorio de importación/exportación (formato "LaOfi S.A.S."). */
