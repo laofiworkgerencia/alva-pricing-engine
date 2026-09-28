@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import handler from './generate-narrative';
+import handler, { NARRATIVE_SECTIONS, buildNarrativePrompt } from './generate-narrative';
+import {
+  NARRATIVE_SECTIONS as ENGINE_NARRATIVE_SECTIONS,
+  buildNarrativePrompt as engineBuildNarrativePrompt,
+} from '../src/engine/narrativePrompt';
 
 function mockResponse() {
   const res = {
@@ -100,5 +104,30 @@ describe('generate-narrative handler', () => {
     const res = mockResponse();
     await handler({ method: 'POST', body: JSON.stringify({ section: 'solucion' }) }, res);
     expect(res.statusCode).toBe(200);
+  });
+});
+
+describe('copia autocontenida vs. src/engine/narrativePrompt.ts', () => {
+  // Este archivo no puede importar desde ../src/engine (Vercel no empaquetó
+  // ese import en producción — ver el comentario en generate-narrative.ts),
+  // así que mantiene su propia copia. Este test falla si alguna vez se edita
+  // una sin la otra.
+  it('NARRATIVE_SECTIONS es idéntico al del motor', () => {
+    expect(NARRATIVE_SECTIONS).toEqual(ENGINE_NARRATIVE_SECTIONS);
+  });
+
+  it('buildNarrativePrompt produce el mismo texto que el del motor', () => {
+    const contexts = [
+      {},
+      { clientName: 'GAD Municipal Ejemplo', projectNameFull: 'Diagnóstico catastral.' },
+      { areaTotalKm2: 120, edificacionesTotal: 3500, projectType: 'Catastro Multipropósito' },
+    ];
+    for (const context of contexts) {
+      for (const section of ['alerta_normativa', 'solucion'] as const) {
+        expect(buildNarrativePrompt(context, section)).toBe(
+          engineBuildNarrativePrompt(context, section)
+        );
+      }
+    }
   });
 });
