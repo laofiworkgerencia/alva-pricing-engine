@@ -9,3 +9,6 @@ export * from './catalogOps';
 export * from './valorizedSchedule';
 export * from './ofertaOps';
 export * from './narrativePrompt';
+export * from './wbsOps';
+export * from './aiCommands';
+export * from './chatPrompt';

@@ -59,6 +59,16 @@ describe('cadena N3 → N4 → N5 → asignación', () => {
     expect(p.recursosWbs[assignmentId].tarifaId).toBe(tarId);
   });
 
+  it('acepta un id explícito para encadenar creaciones sin diff posterior (usado por aiCommands)', () => {
+    let p = emptyProject();
+    p = addRubroSecundario(p, 'n2-1', 'Sec', 'sec-fixed');
+    p = addRubroDetallado(p, 'sec-fixed', 'Det', '', 'det-fixed');
+    p = addTarifa(p, 'det-fixed', 'Prov', 100, 'Mes', 'tar-fixed');
+    expect(p.rubrosSecundarios['sec-fixed'].name).toBe('Sec');
+    expect(p.rubrosDetallados['det-fixed'].parentId).toBe('sec-fixed');
+    expect(p.tarifas['tar-fixed'].parentId).toBe('det-fixed');
+  });
+
   it('renombrar/editar no afecta otros registros', () => {
     let p = emptyProject();
     p = addRubroSecundario(p, 'n2-1', 'Original');

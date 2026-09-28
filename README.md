@@ -68,14 +68,30 @@ completas de la UI original.
     en el JSON exportado) — en el original vivía en `dbState.propuesta`,
     fuera del archivo portable, y se perdía al exportar/importar. Ver
     "Despliegue" abajo para cómo funciona la IA sin exponer ninguna key.
-- **60 tests** cubriendo los dos ejemplos numéricos documentados en
+  - **Asistente ALVA** (`src/AsistenteAlvaView.tsx` + `engine/chatPrompt.ts`
+    + `engine/aiCommands.ts` + `api/chat.ts`): chat que puede modificar el
+    proyecto por instrucción del usuario ("agrega un topógrafo a la Fase 2",
+    "sube el costo del especialista SIG a 2000", "crea la tarea 1.3..."). El
+    modelo responde con un bloque JSON oculto de comandos
+    (`ADD_RESOURCE`/`UPDATE_RESOURCE`/`ADD_WBS`/`UPDATE_WBS`/`DELETE_WBS`)
+    que `aiCommands.ts` valida y aplica — a diferencia del original, que
+    confiaba ciegamente en el JSON del LLM y mutaba el estado con
+    `JSON.parse(JSON.stringify(dbState))`, cada comando aquí se valida
+    contra el proyecto real (un `wbs_id`/`tarifa_id` inexistente se
+    reporta como advertencia y se omite, nunca corrompe el estado) y
+    `DELETE_WBS` borra en cascada sus descendientes y asignaciones (el
+    original solo borraba el nodo, dejando hijos huérfanos). `api/chat.ts`
+    es un relay "tonto": el prompt de sistema y el parseo de comandos
+    viven en el motor (se ejecutan en el cliente), el servidor solo agrega
+    la API key y reenvía a Gemini.
+- **88 tests** cubriendo los dos ejemplos numéricos documentados en
   `SKILL.md` (Especialista SIG → $3,750; Relevador → $64,800), un caso
   completo de prorrateo mixto (por costo directo y por duración) con su
   traza de auditoría, la distribución temporal del cronograma valorado,
   el round-trip de import/export (incluyendo `narrativa`), el parser de
-  Markdown, el borrado en cascada del catálogo, la edición de la oferta
-  comercial/hitos, y el endpoint `/api/generate-narrative` (mockeando la
-  llamada a Gemini).
+  Markdown, el borrado en cascada del catálogo y del WBS, la edición de
+  la oferta comercial/hitos, y los endpoints `/api/generate-narrative` y
+  `/api/chat` (mockeando la llamada a Gemini en ambos).
 
 ## Diferencias deliberadas frente al original
 
@@ -84,10 +100,10 @@ conversación que dio origen a este repo):
 
 1. **Sin secretos en el cliente.** El original horneaba una API key de
    Gemini (`VITE_GEMINI_API_KEY`) en el bundle de producción, extraíble por
-   cualquier usuario. Aquí la generación de texto pasa por un endpoint
-   propio (`api/generate-narrative.ts`, función serverless de Vercel) que
-   guarda la key como variable de entorno del servidor — el navegador
-   nunca la ve, solo llama a `/api/generate-narrative`.
+   cualquier usuario. Aquí toda llamada a Gemini pasa por un endpoint
+   propio (`api/generate-narrative.ts`, `api/chat.ts`; funciones serverless
+   de Vercel) que guarda la key como variable de entorno del servidor — el
+   navegador nunca la ve.
 2. **Motor modular y testeado**, en vez de un solo archivo de 5,600+ líneas
    mezclando cálculo financiero, estado de UI y las 8 pestañas.
 3. **Coincidencia de keywords por límite de palabra** en `AutoQuoterEngine`
@@ -103,10 +119,14 @@ conversación que dio origen a este repo):
 
 ## Qué falta a propósito (no es una regresión, es alcance de esta primera entrega)
 
-- El resto de las pestañas de la UI original (Propuesta clásica/Word,
-  Asistente ALVA, Copiloto IA) — se construyen incrementalmente sobre
-  este mismo motor. El Asistente/Copiloto (chat multi-turno) reutilizará
-  el mismo patrón de `api/generate-narrative.ts`.
+- **Propuesta clásica/Word** — se construye incrementalmente sobre este
+  mismo motor.
+- El Asistente ALVA de esta versión es una sola conversación (sin el
+  sidebar de sesiones múltiples del original) y solo texto — sin adjuntar
+  imágenes/Excel/Word/PDF todavía (el original los soporta vía `xlsx`,
+  `mammoth` y `pdfjs-dist`, que no se agregaron en esta primera pasada).
+  El historial del chat no se guarda con el proyecto (es de memoria, se
+  pierde al recargar).
 - Generación de documento/Word de la propuesta — esta pantalla solo
   gestiona los datos de la oferta comercial, no exporta un `.docx`.
 - Editor de "Contexto Territorial" — el prompt de la IA acepta datos
@@ -123,16 +143,17 @@ conversación que dio origen a este repo):
 
 ```bash
 npm install
-npm test        # vitest run — 60 tests
+npm test        # vitest run — 88 tests
 npm run build   # tsc -b && vite build
 npm run dev     # servidor de desarrollo (sin /api — ver nota abajo)
 ```
 
-> `npm run dev` solo levanta el frontend con Vite; `/api/generate-narrative`
-> no existe en ese servidor. Sin él, el botón "✨ Generar con IA" falla y
+> `npm run dev` solo levanta el frontend con Vite; `/api/*` no existe en ese
+> servidor. Sin backend, el botón "✨ Generar con IA" de Propuesta Narrativa
 > muestra automáticamente el prompt para copiar/pegar manualmente (mismo
-> comportamiento de respaldo que tenía el original sin API key). Para
-> probar el endpoint real en local hace falta la CLI de Vercel (`vercel dev`).
+> respaldo que tenía el original sin API key), y el Asistente ALVA muestra
+> un mensaje de error en el chat. Para probar los endpoints reales en local
+> hace falta la CLI de Vercel (`vercel dev`).
 
 ## Despliegue (Vercel + backend de IA)
 
@@ -150,6 +171,6 @@ automáticamente, sin configuración extra). Pasos, una sola vez:
      código ni me lo compartas a mí.
 4. Click **Deploy**. Vercel construye con `npm run build` (detectado
    automáticamente por ser un proyecto Vite) y publica `/api/generate-narrative`
-   como función serverless en el mismo dominio.
-5. Listo — la pestaña "Propuesta Narrativa" del sitio desplegado ya genera
-   texto con IA. Cualquier redeploy futuro (push a `main`) es automático.
+   y `/api/chat` como funciones serverless en el mismo dominio.
+5. Listo — "Propuesta Narrativa" y "Asistente ALVA" ya generan/actúan con
+   IA real. Cualquier redeploy futuro (push a `main`) es automático.

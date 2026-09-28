@@ -11,9 +11,9 @@ function omit<T extends Record<string, unknown>>(record: T, id: string): T {
 export function addRubroSecundario(
   project: ProjectData,
   parentId: string,
-  name: string
+  name: string,
+  id: string = generateId()
 ): ProjectData {
-  const id = generateId();
   return {
     ...project,
     rubrosSecundarios: { ...project.rubrosSecundarios, [id]: { id, parentId, name } },
@@ -48,9 +48,9 @@ export function addRubroDetallado(
   project: ProjectData,
   parentId: string,
   name: string,
-  description = ''
+  description = '',
+  id: string = generateId()
 ): ProjectData {
-  const id = generateId();
   return {
     ...project,
     rubrosDetallados: {
@@ -89,9 +89,9 @@ export function addTarifa(
   parentId: string,
   supplier: string,
   unitCost: number,
-  unit: TarifaUnit
+  unit: TarifaUnit,
+  id: string = generateId()
 ): ProjectData {
-  const id = generateId();
   return {
     ...project,
     tarifas: { ...project.tarifas, [id]: { id, parentId, supplier, unitCost, unit } },

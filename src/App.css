@@ -908,3 +908,161 @@ tr.total td {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* --- Asistente ALVA --- */
+
+.asistente {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+  min-height: 480px;
+}
+
+.chat-header {
+  flex-shrink: 0;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.chat-empty {
+  margin: auto;
+  text-align: center;
+  color: #718096;
+  max-width: 420px;
+}
+
+.chat-empty ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.example-chip {
+  background: #f7fafc;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: #4a5568;
+  cursor: pointer;
+}
+
+.example-chip:hover {
+  background: #ebf5ff;
+  border-color: #90cdf4;
+}
+
+.chat-bubble-row {
+  display: flex;
+}
+
+.chat-bubble-row.user {
+  justify-content: flex-end;
+}
+
+.chat-bubble-row.model {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.chat-bubble.user {
+  background: #4338ca;
+  color: white;
+  border-bottom-right-radius: 4px;
+  white-space: pre-wrap;
+}
+
+.chat-bubble.model {
+  background: #f7fafc;
+  border: 1px solid var(--border);
+  color: #1a202c;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-bubble.model.error {
+  background: #fed7d7;
+  border-color: #feb2b2;
+  color: #822727;
+}
+
+.chat-bubble.model.loading {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+.chat-bubble.model :is(p, ul, ol) {
+  margin: 0 0 8px;
+}
+
+.chat-bubble.model :last-child {
+  margin-bottom: 0;
+}
+
+.chat-warnings {
+  flex-shrink: 0;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #92400e;
+  margin-top: 8px;
+}
+
+.chat-input-row {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: flex-end;
+}
+
+.chat-input-row textarea {
+  flex: 1;
+  resize: none;
+  min-height: 44px;
+  max-height: 140px;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.chat-input-row button {
+  background: var(--navy);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0 18px;
+  height: 44px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chat-input-row button:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}

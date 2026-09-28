@@ -16,9 +16,10 @@ import ProratedCostsView from './ProratedCostsView';
 import GanttValoradoView from './GanttValoradoView';
 import PropuestaComercialView from './PropuestaComercialView';
 import PropuestaNarrativaView from './PropuestaNarrativaView';
+import AsistenteAlvaView from './AsistenteAlvaView';
 import { formatUSD } from './format';
 
-type ViewTab = 'wbs' | 'recursos' | 'prorated' | 'gantt' | 'propuesta' | 'narrativa';
+type ViewTab = 'wbs' | 'recursos' | 'prorated' | 'gantt' | 'propuesta' | 'narrativa' | 'asistente';
 
 function WbsTreeRows({
   nodes,
@@ -166,6 +167,9 @@ export default function App() {
           <button type="button" className={tab === 'narrativa' ? 'active' : ''} onClick={() => setTab('narrativa')}>
             Propuesta Narrativa
           </button>
+          <button type="button" className={tab === 'asistente' ? 'active' : ''} onClick={() => setTab('asistente')}>
+            Asistente ALVA
+          </button>
         </nav>
       )}
 
@@ -187,6 +191,10 @@ export default function App() {
 
       {project && tab === 'narrativa' && (
         <PropuestaNarrativaView project={project} onChange={setProject} />
+      )}
+
+      {project && tab === 'asistente' && (
+        <AsistenteAlvaView project={project} onChange={setProject} />
       )}
 
       {project && result && tab === 'wbs' && (
