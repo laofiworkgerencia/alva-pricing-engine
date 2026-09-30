@@ -18,6 +18,7 @@ import PropuestaComercialView from './PropuestaComercialView';
 import PropuestaNarrativaView from './PropuestaNarrativaView';
 import PropuestaClasicaView from './PropuestaClasicaView';
 import AsistenteAlvaView from './AsistenteAlvaView';
+import CloudPanel from './CloudPanel';
 import { formatUSD } from './format';
 
 type ViewTab =
@@ -76,6 +77,9 @@ export default function App() {
   const [project, setProject] = useState<ProjectData | null>(() => loadPersistedProject());
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<ViewTab>('wbs');
+  // Id de la fila en `cotizador_temp_projects` (Supabase) si este proyecto
+  // ya se guardó/abrió desde la nube; null si es local/nunca se ha subido.
+  const [cloudId, setCloudId] = useState<string | null>(null);
 
   // Persistencia local: a diferencia de la app original (IndexedDB), esta
   // versión no tenía ningún backend todavía — recargar la pestaña perdía el
@@ -119,9 +123,11 @@ export default function App() {
   const applyProject = (raw: unknown) => {
     try {
       setProject(parseProjectFile(raw));
+      setCloudId(null);
       setError(null);
     } catch (e) {
       setProject(null);
+      setCloudId(null);
       setError(e instanceof ProjectImportError ? e.message : 'Error inesperado al leer el proyecto.');
     }
   };
@@ -181,12 +187,23 @@ export default function App() {
           type="button"
           onClick={() => {
             setProject(null);
+            setCloudId(null);
             setError(null);
           }}
           disabled={!project}
         >
           Cerrar proyecto
         </button>
+        <CloudPanel
+          project={project}
+          cloudId={cloudId}
+          onSaved={(id) => setCloudId(id)}
+          onOpenProject={(p, id) => {
+            setProject(p);
+            setCloudId(id);
+            setError(null);
+          }}
+        />
       </section>
 
       {error && <div className="error-banner">{error}</div>}
