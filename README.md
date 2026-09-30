@@ -4,9 +4,9 @@ Reescritura del **núcleo** de [Cotizador ALVA v3](https://github.com/laofiworkg
 el `PricingEngine`, el `AutoQuoterEngine`, el modelo de datos jerárquico N1–N5/WBS
 y el parser de importación/exportación, con TypeScript, tests automatizados
 (Vitest) y validación de datos (Zod). **No reemplaza la app original** —
-es una base alternativa, más fácil de mantener y verificar, pensada para
-validar primero el motor antes de invertir en reconstruir las 8 pestañas
-completas de la UI original.
+es una base alternativa, más fácil de mantener y verificar. Ya cubre las
+**8 pestañas** de la UI original, pero con gaps reales frente a ella que se
+documentan explícitamente más abajo (no es un reemplazo 1:1 todavía).
 
 ## Qué incluye esta primera versión
 
@@ -34,7 +34,9 @@ completas de la UI original.
     auditoría por asignación (a qué hoja aportó, cuánto, si fue costo
     directo o prorrateado, y con qué criterio de reparto) — no existía en
     el original, donde el desglose por hoja no era inspeccionable.
-- **`src/App.tsx`** — UI mínima con tres pestañas:
+- **`src/App.tsx`** — las 8 pestañas de la app original, más persistencia
+  local (`localStorage`): el proyecto ya no se pierde al recargar la
+  pestaña del navegador (antes solo existía en memoria — ver "Qué falta").
   - **WBS y Financiero**: cargar un proyecto de ejemplo o importar un
     `.json` real exportado desde el Cotizador ALVA v3, ver el árbol WBS con
     costos calculados y el resumen financiero, y exportarlo de vuelta.
@@ -84,14 +86,30 @@ completas de la UI original.
     es un relay "tonto": el prompt de sistema y el parseo de comandos
     viven en el motor (se ejecutan en el cliente), el servidor solo agrega
     la API key y reenvía a Gemini.
-- **88 tests** cubriendo los dos ejemplos numéricos documentados en
+  - **Propuesta Clásica** (`src/PropuestaClasicaView.tsx` +
+    `engine/classicProposal.ts` + `engine/classicDocxExport.ts`): la 8va
+    pestaña, equivalente a `renderClassicQuotePreview()` +
+    `generateWordDoc('classic')` del original — preview del documento
+    formal (header, contexto territorial, narrativa, desglose de costos
+    por WBS con entregables, cronograma, total, plan de hitos) y un botón
+    que exporta un **`.docx` real** (librería `docx`, cargada solo al
+    exportar para no engordar el bundle principal). El original generaba
+    un `.doc` falso: un blob HTML con MIME `application/msword` que Word
+    abre pero no es OOXML genuino. El "Contexto Territorial" aquí es
+    libre para cualquier proyecto (campos numéricos + notas); en el
+    original era una tabla censal del cantón Archidona (INEC CPV 2022)
+    hardcodeada en el código y mostrada solo si `clientName` contenía la
+    palabra "archidona".
+- **96 tests** cubriendo los dos ejemplos numéricos documentados en
   `SKILL.md` (Especialista SIG → $3,750; Relevador → $64,800), un caso
   completo de prorrateo mixto (por costo directo y por duración) con su
   traza de auditoría, la distribución temporal del cronograma valorado,
   el round-trip de import/export (incluyendo `narrativa`), el parser de
   Markdown, el borrado en cascada del catálogo y del WBS, la edición de
-  la oferta comercial/hitos, y los endpoints `/api/generate-narrative` y
-  `/api/chat` (mockeando la llamada a Gemini en ambos).
+  la oferta comercial/hitos, los endpoints `/api/generate-narrative` y
+  `/api/chat` (mockeando la llamada a Gemini en ambos), y la generación
+  del `.docx` de la Propuesta Clásica (valida que el buffer resultante
+  sea un zip OOXML no vacío).
 
 ## Diferencias deliberadas frente al original
 
@@ -116,34 +134,41 @@ conversación que dio origen a este repo):
    real (`globalInsurance` + `globalContingency` + `globalProfit`) es
    Seguros + Imprevistos + Utilidad. Aquí se documenta explícitamente esa
    discrepancia en vez de dejarla implícita.
+6. **Export a Word genuino.** La Propuesta Clásica exporta un `.docx` real
+   (OOXML, vía la librería `docx`), no el truco HTML→blob `application/msword`
+   del original.
+7. **Persistencia local.** `localStorage` evita perder el proyecto al
+   recargar el navegador — el original tampoco tenía esto para la sesión
+   de trabajo en curso salvo que sincronizara a Supabase (parcial e
+   inconsistente, según auditoría previa).
 
-## Qué falta a propósito (no es una regresión, es alcance de esta primera entrega)
+## Gaps reales frente al original (pendientes, no descubiertos por error)
 
-- **Propuesta clásica/Word** — se construye incrementalmente sobre este
-  mismo motor.
+- **Sin backend de persistencia multi-usuario/nube.** `localStorage` es
+  por navegador y por dispositivo — no sincroniza entre equipos ni tiene
+  login. El original usa IndexedDB + Supabase (parcial). Esto está
+  pausado a propósito: antes de construir persistencia aquí, se está
+  evaluando un esquema de base de datos **unificado** con el resto del
+  ecosistema ALVA (ALVA Finanzas, PMP as a Service) para no duplicar
+  trabajo que luego haya que migrar.
 - El Asistente ALVA de esta versión es una sola conversación (sin el
   sidebar de sesiones múltiples del original) y solo texto — sin adjuntar
   imágenes/Excel/Word/PDF todavía (el original los soporta vía `xlsx`,
   `mammoth` y `pdfjs-dist`, que no se agregaron en esta primera pasada).
   El historial del chat no se guarda con el proyecto (es de memoria, se
   pierde al recargar).
-- Generación de documento/Word de la propuesta — esta pantalla solo
-  gestiona los datos de la oferta comercial, no exporta un `.docx`.
-- Editor de "Contexto Territorial" — el prompt de la IA acepta datos
-  territoriales (`areaTotalKm2`, `edificacionesTotal`) pero esta versión
-  no tiene todavía la pantalla para capturarlos; por ahora solo usa
-  cliente/nombre del proyecto.
-- Autenticación/persistencia multi-usuario (Supabase) — esta versión es
-  local, sin backend.
 - `isLocked` (bloqueo de asignaciones ante reestructuración top-down de
   fechas) — es una conducta de edición interactiva, no parte del cálculo
   puro; se evaluará junto con la UI de edición.
+- El logo corporativo de la Propuesta Clásica es solo estado de sesión
+  (igual que en el original): no viaja en el JSON exportado ni sobrevive
+  a un recargo de página.
 
 ## Desarrollo
 
 ```bash
 npm install
-npm test        # vitest run — 88 tests
+npm test        # vitest run — 96 tests
 npm run build   # tsc -b && vite build
 npm run dev     # servidor de desarrollo (sin /api — ver nota abajo)
 ```

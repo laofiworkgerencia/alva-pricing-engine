@@ -12,3 +12,6 @@ export * from './narrativePrompt';
 export * from './wbsOps';
 export * from './aiCommands';
 export * from './chatPrompt';
+export * from './classicProposal';
+// classicDocxExport se importa dinámicamente donde se usa (PropuestaClasicaView)
+// para no arrastrar la librería 'docx' (~400kB) al bundle principal.

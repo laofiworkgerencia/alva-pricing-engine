@@ -1,4 +1,4 @@
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import './App.css';
 import {
   buildWbsTree,
@@ -16,10 +16,33 @@ import ProratedCostsView from './ProratedCostsView';
 import GanttValoradoView from './GanttValoradoView';
 import PropuestaComercialView from './PropuestaComercialView';
 import PropuestaNarrativaView from './PropuestaNarrativaView';
+import PropuestaClasicaView from './PropuestaClasicaView';
 import AsistenteAlvaView from './AsistenteAlvaView';
 import { formatUSD } from './format';
 
-type ViewTab = 'wbs' | 'recursos' | 'prorated' | 'gantt' | 'propuesta' | 'narrativa' | 'asistente';
+type ViewTab =
+  | 'wbs'
+  | 'recursos'
+  | 'prorated'
+  | 'gantt'
+  | 'propuesta'
+  | 'clasica'
+  | 'narrativa'
+  | 'asistente';
+
+const STORAGE_KEY = 'alva-pricing-engine:project';
+
+function loadPersistedProject(): ProjectData | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return parseProjectFile(JSON.parse(raw));
+  } catch {
+    // Datos corruptos o localStorage no disponible (modo privado, etc.):
+    // arrancar sin proyecto en vez de romper la carga de la app.
+    return null;
+  }
+}
 
 function WbsTreeRows({
   nodes,
@@ -50,9 +73,27 @@ function WbsTreeRows({
 }
 
 export default function App() {
-  const [project, setProject] = useState<ProjectData | null>(null);
+  const [project, setProject] = useState<ProjectData | null>(() => loadPersistedProject());
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<ViewTab>('wbs');
+
+  // Persistencia local: a diferencia de la app original (IndexedDB), esta
+  // versión no tenía ningún backend todavía — recargar la pestaña perdía el
+  // proyecto por completo. localStorage no reemplaza Supabase/multi-usuario
+  // (pendiente, ver README), pero evita esa pérdida de trabajo mientras se
+  // prueba en un solo navegador.
+  useEffect(() => {
+    try {
+      if (project) {
+        localStorage.setItem(STORAGE_KEY, serializeProjectFileToWireJson(project));
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      // localStorage no disponible (modo privado, cuota excedida, etc.):
+      // se sigue trabajando en memoria, solo sin persistencia.
+    }
+  }, [project]);
 
   const result = useMemo<PricingResult | null>(() => {
     if (!project) return null;
@@ -136,6 +177,16 @@ export default function App() {
         <button type="button" onClick={exportProject} disabled={!project}>
           Exportar proyecto (.json)
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setProject(null);
+            setError(null);
+          }}
+          disabled={!project}
+        >
+          Cerrar proyecto
+        </button>
       </section>
 
       {error && <div className="error-banner">{error}</div>}
@@ -164,6 +215,9 @@ export default function App() {
           <button type="button" className={tab === 'propuesta' ? 'active' : ''} onClick={() => setTab('propuesta')}>
             Propuesta Comercial
           </button>
+          <button type="button" className={tab === 'clasica' ? 'active' : ''} onClick={() => setTab('clasica')}>
+            Propuesta Clásica
+          </button>
           <button type="button" className={tab === 'narrativa' ? 'active' : ''} onClick={() => setTab('narrativa')}>
             Propuesta Narrativa
           </button>
@@ -187,6 +241,10 @@ export default function App() {
 
       {project && result && tab === 'propuesta' && (
         <PropuestaComercialView project={project} result={result} onChange={setProject} />
+      )}
+
+      {project && result && tab === 'clasica' && (
+        <PropuestaClasicaView project={project} result={result} onChange={setProject} />
       )}
 
       {project && tab === 'narrativa' && (

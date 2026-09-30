@@ -82,6 +82,14 @@ export const wireResourceAssignmentSchema = z.object({
   observations: z.string().optional(),
 });
 
+export const wireContextoTerritorialSchema = z.object({
+  areaTotalKm2: z.number().optional(),
+  poblacionTotal: z.number().optional(),
+  hogaresTotal: z.number().optional(),
+  edificacionesTotal: z.number().optional(),
+  notas: z.string().optional(),
+});
+
 export const wireOfertaComercialSchema = z.object({
   version: z.string(),
   clientName: z.string(),
@@ -100,6 +108,8 @@ export const wireOfertaComercialSchema = z.object({
   globalContingency: z.number(),
   globalProfit: z.number(),
   milestones: z.array(wireMilestoneSchema),
+  /** Ausente en proyectos exportados por la app original. */
+  contextoTerritorial: wireContextoTerritorialSchema.optional(),
 });
 
 export const wireNarrativeSectionSchema = z.object({

@@ -130,6 +130,20 @@ export interface Milestone {
   linkedWbsId?: string;
 }
 
+/**
+ * Datos territoriales opcionales para la Propuesta Clásica. En el original
+ * esto era una tabla de censo (INEC CPV 2022) hardcodeada en el código y
+ * mostrada solo si `clientName` contenía "archidona" — aquí es un campo
+ * genérico y editable para cualquier proyecto/cliente.
+ */
+export interface ContextoTerritorial {
+  areaTotalKm2?: number;
+  poblacionTotal?: number;
+  hogaresTotal?: number;
+  edificacionesTotal?: number;
+  notas?: string;
+}
+
 export interface OfertaComercial {
   version: string;
   clientName: string;
@@ -148,6 +162,7 @@ export interface OfertaComercial {
   globalContingency: number;
   globalProfit: number;
   milestones: Milestone[];
+  contextoTerritorial?: ContextoTerritorial;
 }
 
 /** IDs de las secciones narrativas de la propuesta (SKILL.md / NarrativeEditor original). */
