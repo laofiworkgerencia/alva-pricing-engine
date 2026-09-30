@@ -147,17 +147,27 @@ conversación que dio origen a este repo):
 - **Guardado en la nube sin login (temporal).** `src/cloudStore.ts` +
   `src/CloudPanel.tsx` guardan/listan/abren proyectos en una tabla de
   Supabase (`cotizador_temp_projects`, en el proyecto `alva-ingenieria`
-  de la organización ALVA FINANZAS — ver migraciones
-  `create_cotizador_temp_projects` y
-  `fix_cotizador_temp_set_updated_at_search_path`). Es **explícitamente
-  temporal**: guarda el proyecto completo como JSON (sin modelo
-  relacional), la tabla tiene el prefijo `cotizador_temp_` para no
-  mezclarse con las tablas reales de ALVA Finanzas, y **la política RLS
-  es de lectura/escritura abierta a cualquiera con la key pública**
-  porque todavía no hay login en el frontend — la UI lo advierte en un
-  banner. Se migrará al esquema unificado de ALVA (con auth y RLS por
-  usuario/workspace) cuando esté diseñado; mientras tanto no subas aquí
-  cotizaciones con información realmente confidencial.
+  de la organización ALVA FINANZAS). Es **explícitamente temporal**:
+  guarda el proyecto completo como JSON (sin modelo relacional), y la
+  tabla tiene el prefijo `cotizador_temp_` para no mezclarse con las
+  tablas reales de ALVA Finanzas. No hay login real todavía — en su
+  lugar, el acceso está protegido por una **clave compartida** (una
+  sola, no por usuario) que el frontend envía en el header
+  `x-cotizador-key` y que una política RLS valida contra un hash
+  (bcrypt vía `pgcrypto`) guardado en `cotizador_temp_config` (tabla sin
+  ninguna política RLS — inaccesible por la API pública, solo la lee la
+  función `SECURITY DEFINER` `cotizador_temp_check_key`). Ver migraciones
+  `create_cotizador_temp_projects`,
+  `fix_cotizador_temp_set_updated_at_search_path` y
+  `add_cotizador_temp_shared_key`. Verificado con SQL directo como rol
+  `anon` (clave correcta → acceso; incorrecta/ausente → 0 filas) y con
+  Playwright interceptando las llamadas de red (sin clave el botón de
+  guardar queda deshabilitado; clave incorrecta se rechaza con mensaje
+  claro; clave correcta habilita guardar/listar/abrir). Se migrará al
+  esquema unificado de ALVA (con auth real y RLS por usuario/workspace)
+  cuando esté diseñado; mientras tanto no subas aquí cotizaciones con
+  información realmente confidencial — es una traba deliberadamente
+  simple, no una autenticación real.
 - El Asistente ALVA de esta versión es una sola conversación (sin el
   sidebar de sesiones múltiples del original) y solo texto — sin adjuntar
   imágenes/Excel/Word/PDF todavía (el original los soporta vía `xlsx`,
@@ -220,3 +230,11 @@ el cliente; no hace falta mantenerlas en secreto):
 Sin estas variables, la app funciona igual pero el panel de nube
 simplemente no aparece (`cloudEnabled` queda en `false`); no es un
 requisito para probar el resto de las pestañas.
+
+Además, dentro de la app (pestaña "☁ Proyectos en la nube"), hay que
+escribir una vez la **clave compartida** y hacer click en "Guardar
+clave" — se valida contra la base y queda guardada en `localStorage` de
+ese navegador. Sin la clave correcta, el botón de guardar queda
+deshabilitado y la lista aparece vacía (la política RLS filtra todo).
+Esa clave no es un secreto de Vercel — es algo que se escribe dentro de
+la app misma, la primera vez que se usa en cada navegador/dispositivo.

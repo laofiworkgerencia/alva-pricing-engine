@@ -1372,3 +1372,52 @@ tr.total td {
   background: none;
   color: #c53030;
 }
+
+.cloud-key-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cloud-key-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  flex: 1;
+  min-width: 220px;
+}
+
+.cloud-key-form input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.cloud-key-form button {
+  background: var(--navy);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cloud-key-form button:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}
+
+.cloud-key-status {
+  font-size: 12px;
+  color: #166534;
+  font-weight: 600;
+}
