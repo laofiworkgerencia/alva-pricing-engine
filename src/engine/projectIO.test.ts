@@ -90,10 +90,10 @@ describe('serializeProjectFileToWireJson / parseProjectFile', () => {
     expect(parsedBack).toEqual(original);
   });
 
-  it('el JSON serializado usa el formato de intercambio real (parent_id, elemento_wbs_id, etc.)', () => {
+  it('el JSON serializado usa el formato de intercambio real (parentId, elemento_wbs_id, etc.)', () => {
     const wireJson = JSON.parse(serializeProjectFileToWireJson(buildMinimalProject()));
     expect(wireJson.empresa).toBe('LaOfi S.A.S.');
-    expect(wireJson.data.elementos_wbs['wbs-1'].parent_id).toBeNull();
+    expect(wireJson.data.elementos_wbs['wbs-1'].parentId).toBeNull();
     expect(wireJson.data.recursos_wbs['res-1'].elemento_wbs_id).toBe('wbs-1');
     expect(wireJson.data.recursos_wbs['res-1'].tarifa_id).toBe('tar-1');
     expect(wireJson.data.narrativa.alerta_normativa.texto).toContain('Marco legal');
@@ -104,6 +104,15 @@ describe('serializeProjectFileToWireJson / parseProjectFile', () => {
     delete wireJson.data.narrativa;
     const parsed = parseProjectFile(wireJson);
     expect(parsed.narrativa).toEqual({});
+  });
+
+  it('importa un archivo real de producción sin startDay ni quantityUnit (la app original no los persiste)', () => {
+    const wireJson = JSON.parse(serializeProjectFileToWireJson(buildMinimalProject()));
+    delete wireJson.data.elementos_wbs['wbs-1'].startDay;
+    delete wireJson.data.recursos_wbs['res-1'].quantityUnit;
+    const parsed = parseProjectFile(wireJson);
+    expect(parsed.elementosWbs['wbs-1'].startDay).toBe(1);
+    expect(parsed.recursosWbs['res-1'].quantityUnit).toBe('Persona');
   });
 
   it('rechaza un archivo sin empresa === "LaOfi S.A.S."', () => {

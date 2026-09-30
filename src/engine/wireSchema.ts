@@ -43,7 +43,7 @@ export const wireWbsNodeSchema = z.object({
   code: z.string(),
   name: z.string(),
   levelType: z.enum(['Fase', 'Actividad', 'Acción', 'Tarea']),
-  parent_id: z.string().nullable(),
+  parentId: z.string().nullable(),
   isActive: z.boolean().default(true),
   desc_general: z.string().optional().default(''),
   desc_smart: z.string().optional().default(''),
@@ -52,7 +52,10 @@ export const wireWbsNodeSchema = z.object({
   desc_insumos: z.string().optional().default(''),
   desc_tecnica: z.string().optional().default(''),
   deliverable: z.string().optional().default(''),
-  startDay: z.number(),
+  // La app original no persiste startDay (no tiene Gantt con fechas
+  // almacenadas) — ausente en exports reales de producción. Se
+  // rellena con 1 en fromWire() cuando falta.
+  startDay: z.number().optional(),
   duration: z.number(),
 });
 
@@ -68,7 +71,9 @@ export const wireResourceAssignmentSchema = z.object({
   elemento_wbs_id: z.string(),
   tarifa_id: z.string(),
   quantity: z.number(),
-  quantityUnit: z.string(),
+  // Ausente en exports reales de producción (la app original no la usa
+  // para el cálculo); se rellena con 'Persona' en fromWire() cuando falta.
+  quantityUnit: z.string().optional(),
   time: z.number(),
   timeUnit: z.string(),
   isLocked: z.boolean().optional(),
