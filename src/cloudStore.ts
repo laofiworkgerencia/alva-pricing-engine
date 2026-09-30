@@ -1,18 +1,23 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { parseProjectFile, serializeProjectFileToWireJson, type ProjectData } from './engine';
 
-// Almacenamiento en la nube TEMPORAL (tabla `cotizador_temp_projects`,
-// esquema descartable — ver README) mientras se diseña el esquema unificado
-// de ALVA. Guarda el proyecto completo como el mismo JSON portable
-// "LaOfi S.A.S." que ya usan el import/export locales.
+// Almacenamiento en la nube en un schema de Postgres SEPARADO
+// (`cotizador_temp`, dentro del proyecto `alva-ingenieria` de Supabase) —
+// tablas relacionales reales por cada proyecto (WBS, catálogo, recursos,
+// hitos, narrativa), no un blob JSON en una columna. Ver
+// supabase/cotizador_temp.sql para el DDL completo y las funciones
+// save_project()/load_project() que hacen la conversión con el mismo
+// formato "wire" que ya usan el import/export locales — así el motor
+// (parseProjectFile/serializeProjectFileToWireJson) no necesita cambios.
+//
+// Lo TEMPORAL es el schema (se migrará al modelo unificado de ALVA más
+// adelante) — los proyectos guardados aquí son datos reales, no de
+// prueba, y persisten normalmente mientras tanto.
 //
 // Sin login real todavía: el acceso se protege con una CLAVE COMPARTIDA
-// (no por usuario) que viaja en el header `x-cotizador-key` y que la
-// política RLS de la tabla valida contra un hash guardado en la base de
-// datos (ver migración add_cotizador_temp_shared_key). Es una traba
-// deliberadamente simple — no reemplaza autenticación real — pensada
-// para que un desconocido con la anon key pública no pueda listar/editar
-// las cotizaciones mientras se prueba la app.
+// (no por usuario) que viaja en el header `x-cotizador-key` y que tanto
+// la política RLS de `projects` como las funciones save_project/
+// load_project validan contra un hash guardado en la base de datos.
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -42,23 +47,27 @@ export function setStoredCloudKey(key: string): void {
   cachedClientKey = null;
 }
 
-let cachedClient: SupabaseClient | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cachedClient: SupabaseClient<any, any, any> | null = null;
 let cachedClientKey: string | null = null;
 
-function getClient(): SupabaseClient {
+/** Cliente apuntando al schema `cotizador_temp` (no `public`), con la clave compartida como header. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getClient(): SupabaseClient<any, any, any> {
   if (!cloudEnabled) {
     throw new Error('Nube no configurada: faltan VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.');
   }
   const key = getStoredCloudKey();
   if (cachedClient && cachedClientKey === key) return cachedClient;
   cachedClient = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+    db: { schema: 'cotizador_temp' },
     global: { headers: { 'x-cotizador-key': key } },
   });
   cachedClientKey = key;
   return cachedClient;
 }
 
-/** Valida la clave contra el hash guardado en la base, sin intentar leer/escribir proyectos. */
+/** Valida la clave contra el hash guardado en la base (función en el schema `public`). */
 export async function verifyCloudKey(key: string): Promise<boolean> {
   if (!cloudEnabled) {
     throw new Error('Nube no configurada: faltan VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.');
@@ -77,7 +86,7 @@ export interface CloudProjectSummary {
   updatedAt: string;
 }
 
-function translateRlsError(error: { code?: string; message: string }): never {
+function translateError(error: { code?: string; message: string }): never {
   if (error.code === '42501' || error.code === 'PGRST301') {
     throw new Error('Clave compartida incorrecta o no configurada.');
   }
@@ -87,61 +96,43 @@ function translateRlsError(error: { code?: string; message: string }): never {
 export async function listCloudProjects(): Promise<CloudProjectSummary[]> {
   const client = getClient();
   const { data, error } = await client
-    .from('cotizador_temp_projects')
-    .select('id, name, client_name, quote_sequence, updated_at')
+    .from('projects')
+    .select('id, project_name, client_name, quote_sequence, updated_at')
     .order('updated_at', { ascending: false });
-  if (error) translateRlsError(error);
+  if (error) translateError(error);
   return (data ?? []).map((r) => ({
     id: r.id as string,
-    name: r.name as string,
+    name: (r.project_name as string | null) || 'Proyecto sin nombre',
     clientName: (r.client_name as string | null) ?? null,
     quoteSequence: (r.quote_sequence as string | null) ?? null,
     updatedAt: r.updated_at as string,
   }));
 }
 
-/** Inserta si `cloudId` es null, actualiza si ya existe. Devuelve el id de la fila. */
+/** Inserta si `cloudId` es null, reemplaza los datos si ya existe. Devuelve el id del proyecto. */
 export async function saveProjectToCloud(
   project: ProjectData,
   cloudId: string | null
 ): Promise<string> {
   const client = getClient();
-  const wireJson = JSON.parse(serializeProjectFileToWireJson(project));
-  const row = {
-    name: project.ofertaComercial.projectName || 'Proyecto sin nombre',
-    client_name: project.ofertaComercial.clientName || null,
-    quote_sequence: project.ofertaComercial.quoteSequence || null,
-    data: wireJson,
-  };
-
-  if (cloudId) {
-    const { error } = await client.from('cotizador_temp_projects').update(row).eq('id', cloudId);
-    if (error) translateRlsError(error);
-    return cloudId;
-  }
-
-  const { data, error } = await client
-    .from('cotizador_temp_projects')
-    .insert(row)
-    .select('id')
-    .single();
-  if (error) translateRlsError(error);
-  return data.id as string;
+  const wireFile = JSON.parse(serializeProjectFileToWireJson(project));
+  const { data, error } = await client.rpc('save_project', {
+    p_id: cloudId,
+    payload: wireFile.data,
+  });
+  if (error) translateError(error);
+  return data as string;
 }
 
 export async function loadProjectFromCloud(id: string): Promise<ProjectData> {
   const client = getClient();
-  const { data, error } = await client
-    .from('cotizador_temp_projects')
-    .select('data')
-    .eq('id', id)
-    .single();
-  if (error) translateRlsError(error);
-  return parseProjectFile(data.data);
+  const { data, error } = await client.rpc('load_project', { p_id: id });
+  if (error) translateError(error);
+  return parseProjectFile(data);
 }
 
 export async function deleteProjectFromCloud(id: string): Promise<void> {
   const client = getClient();
-  const { error } = await client.from('cotizador_temp_projects').delete().eq('id', id);
-  if (error) translateRlsError(error);
+  const { error } = await client.from('projects').delete().eq('id', id);
+  if (error) translateError(error);
 }

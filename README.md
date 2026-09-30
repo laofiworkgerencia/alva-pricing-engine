@@ -144,30 +144,52 @@ conversación que dio origen a este repo):
 
 ## Gaps reales frente al original (pendientes, no descubiertos por error)
 
-- **Guardado en la nube sin login (temporal).** `src/cloudStore.ts` +
-  `src/CloudPanel.tsx` guardan/listan/abren proyectos en una tabla de
-  Supabase (`cotizador_temp_projects`, en el proyecto `alva-ingenieria`
-  de la organización ALVA FINANZAS). Es **explícitamente temporal**:
-  guarda el proyecto completo como JSON (sin modelo relacional), y la
-  tabla tiene el prefijo `cotizador_temp_` para no mezclarse con las
-  tablas reales de ALVA Finanzas. No hay login real todavía — en su
-  lugar, el acceso está protegido por una **clave compartida** (una
-  sola, no por usuario) que el frontend envía en el header
-  `x-cotizador-key` y que una política RLS valida contra un hash
-  (bcrypt vía `pgcrypto`) guardado en `cotizador_temp_config` (tabla sin
-  ninguna política RLS — inaccesible por la API pública, solo la lee la
-  función `SECURITY DEFINER` `cotizador_temp_check_key`). Ver migraciones
-  `create_cotizador_temp_projects`,
-  `fix_cotizador_temp_set_updated_at_search_path` y
-  `add_cotizador_temp_shared_key`. Verificado con SQL directo como rol
-  `anon` (clave correcta → acceso; incorrecta/ausente → 0 filas) y con
-  Playwright interceptando las llamadas de red (sin clave el botón de
-  guardar queda deshabilitado; clave incorrecta se rechaza con mensaje
-  claro; clave correcta habilita guardar/listar/abrir). Se migrará al
-  esquema unificado de ALVA (con auth real y RLS por usuario/workspace)
-  cuando esté diseñado; mientras tanto no subas aquí cotizaciones con
-  información realmente confidencial — es una traba deliberadamente
-  simple, no una autenticación real.
+- **Guardado en la nube sin login, en un schema relacional temporal.**
+  `src/cloudStore.ts` + `src/CloudPanel.tsx` guardan/listan/abren
+  proyectos en **tablas relacionales reales** — no un JSON en una
+  columna — dentro de un **schema de Postgres separado**,
+  `cotizador_temp`, en el proyecto `alva-ingenieria` de la organización
+  ALVA FINANZAS. Ver `supabase/cotizador_temp.sql` para el DDL completo.
+  Lo temporal es el **schema** (se migrará al esquema unificado de ALVA
+  cuando esté diseñado) — los proyectos guardados ahí mientras tanto son
+  datos reales, no de prueba, y persisten normalmente.
+  - **9 tablas**: `projects` (una fila por cotización, con todos los
+    campos de `oferta_comercial` + contexto territorial) y 8 tablas hijas
+    con clave primaria compuesta `(project_id, id)` — `categorias`,
+    `rubros_principales/secundarios/detallados`, `tarifas`,
+    `elementos_wbs`, `recursos_wbs`, `milestones`, `narrativa_secciones`
+    — con foreign keys reales entre ellas (cascada al borrar el proyecto).
+  - **`save_project(p_id, payload)` / `load_project(p_id)`** (funciones
+    `SECURITY DEFINER`): convierten entre el modelo relacional y el mismo
+    JSON "wire" que ya produce/consume
+    `serializeProjectFileToWireJson()`/`parseProjectFile()` — el motor no
+    necesitó ningún cambio. `save_project` reemplaza todos los hijos en
+    cada guardado (borra + reinserta desde el JSON completo que ya tiene
+    el cliente) y tiene defensas basadas en datos reales observados (el
+    backup de Rumiñahui traía un hito con `linkedWbsId` apuntando a un
+    nodo WBS ya borrado): referencias rotas de `milestones.linkedWbsId`
+    se guardan como `null` en vez de rechazar todo el guardado, y
+    `recursos_wbs` huérfanos (sin WBS o tarifa válidos) se omiten.
+  - **Acceso**: `projects` tiene RLS con la misma clave compartida de
+    antes (header `x-cotizador-key`, hash bcrypt en
+    `public.cotizador_temp_config`); las 8 tablas hijas tienen RLS
+    habilitado **sin ninguna política** — bloqueadas por completo a
+    acceso directo vía la API pública, solo alcanzables a través de
+    `save_project`/`load_project`, que verifican la clave ellas mismas.
+  - El schema se expuso a PostgREST por SQL
+    (`alter role authenticator set pgrst.db_schemas = 'public, cotizador_temp'`
+    — el equivalente al toggle "Exposed schemas" del dashboard).
+  - **Verificado**: round-trip completo `save_project` → `load_project`
+    con datos reales (incluyendo el caso del hito con referencia rota)
+    contra el parser Zod real del motor (`parseProjectFile`) — parsea sin
+    error y el cálculo da el costo esperado; y con Playwright
+    interceptando las llamadas de red para el flujo completo de la UI
+    (clave → guardar → cerrar → reabrir, total idéntico tras reabrir). No
+    se pudo probar contra el backend real desde el navegador de este
+    entorno de desarrollo porque su proxy de red bloquea `*.supabase.co`.
+  - Mientras tanto, no subas cotizaciones con información realmente
+    confidencial — la clave compartida no es autenticación real, es una
+    traba deliberadamente simple para no dejar la API totalmente abierta.
 - El Asistente ALVA de esta versión es una sola conversación (sin el
   sidebar de sesiones múltiples del original) y solo texto — sin adjuntar
   imágenes/Excel/Word/PDF todavía (el original los soporta vía `xlsx`,
