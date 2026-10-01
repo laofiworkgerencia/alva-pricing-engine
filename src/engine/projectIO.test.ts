@@ -115,6 +115,13 @@ describe('serializeProjectFileToWireJson / parseProjectFile', () => {
     expect(parsed.recursosWbs['res-1'].quantityUnit).toBe('Persona');
   });
 
+  it('lee un nodo raíz sin parentId como raíz (el JSON que devolvía load_project en Supabase)', () => {
+    const wireJson = JSON.parse(serializeProjectFileToWireJson(buildMinimalProject()));
+    delete wireJson.data.elementos_wbs['wbs-1'].parentId;
+    const parsed = parseProjectFile(wireJson);
+    expect(parsed.elementosWbs['wbs-1'].parentId).toBeNull();
+  });
+
   it('rechaza un archivo sin empresa === "LaOfi S.A.S."', () => {
     const bad = { empresa: 'Otra Empresa', version: '1', timestamp: '', data: {} };
     expect(() => parseProjectFile(bad)).toThrow(ProjectImportError);

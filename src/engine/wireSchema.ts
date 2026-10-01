@@ -43,7 +43,14 @@ export const wireWbsNodeSchema = z.object({
   code: z.string(),
   name: z.string(),
   levelType: z.enum(['Fase', 'Actividad', 'Acción', 'Tarea']),
-  parentId: z.string().nullable(),
+  // Los nodos raíz (Fases) llevan parentId null. Un parentId ausente también
+  // se lee como raíz: load_project (Supabase) pasaba los nodos por
+  // jsonb_strip_nulls y devolvía las Fases sin esa clave, lo que impedía
+  // reabrir un proyecto guardado en la nube.
+  parentId: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? null),
   isActive: z.boolean().default(true),
   desc_general: z.string().optional().default(''),
   desc_smart: z.string().optional().default(''),
